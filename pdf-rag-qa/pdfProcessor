@@ -1,0 +1,43 @@
+const fs = require("fs");
+
+async function extractTextFromPDF(filePath) {
+    try {
+        const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
+
+        const data = new Uint8Array(fs.readFileSync(filePath));
+
+        const loadingTask = pdfjsLib.getDocument({ data: data });
+        const pdf = await loadingTask.promise;
+
+        let text = "";
+
+        for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const content = await page.getTextContent();
+
+            const strings = content.items.map(item => item.str);
+            text += strings.join(" ") + "\n";
+        }
+
+        return text;
+
+    } catch (error) {
+        console.error("PDF extraction failed:", error);
+        return null;
+    }
+}
+
+function chunkText(text, chunkSize = 500) {
+    const chunks = [];
+
+    for (let i = 0; i < text.length; i += chunkSize) {
+        chunks.push(text.slice(i, i + chunkSize));
+    }
+
+    return chunks;
+}
+
+module.exports = {
+    extractTextFromPDF,
+    chunkText
+};
